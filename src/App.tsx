@@ -4,7 +4,7 @@ import { theme } from './theme';
 import { ToolCard } from './components/ToolCard';
 
 const SSE_URL = (prompt: string, sessionId?: string | null, conversationId?: string | null, pauseMode?: boolean) => {
-  let url = `http://localhost:3333/api/agent/stream?prompt=${encodeURIComponent(prompt)}&language=chinese`;
+  let url = `http://localhost:8000/api/agent/stream?prompt=${encodeURIComponent(prompt)}&language=chinese`;
   if (sessionId) url += `&sessionId=${sessionId}`;
   if (conversationId) url += `&conversationId=${conversationId}`;
   if (pauseMode) url += `&pauseAfterEachStep=true`;

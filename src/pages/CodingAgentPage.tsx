@@ -65,12 +65,17 @@ const PlanCard: React.FC<{ steps: PlanStep[] }> = ({ steps }) => (
     </Card>
 );
 
-const BDDCard: React.FC<{ scenarios: Array<{ id: string; title: string; given: string[]; when: string[]; then: string[] }>; project?: Project }> = ({ scenarios, project }) => {
+const BDDCard: React.FC<{ scenarios: Array<{ id: string; title: string; given: string[]; when: string[]; then: string[] }>; project?: Project; serverMatches?: Record<string, string[]> }> = ({ scenarios, project, serverMatches }) => {
     const [openIds, setOpenIds] = useState<Set<string>>(new Set());
     const [selectedIdx, setSelectedIdx] = useState<Record<string, number>>({});
 
     const matchFiles = (s: { id: string; title: string; given: string[]; when: string[]; then: string[] }): ProjectFile[] => {
         if (!project) return [];
+        if (serverMatches && serverMatches[s.id] && serverMatches[s.id].length > 0) {
+            const paths = serverMatches[s.id];
+            const files = project.files.filter(f => paths.includes(f.path));
+            if (files.length > 0) return files.slice(0, 3);
+        }
         const terms = [s.title, ...s.given, ...s.when, ...s.then]
             .join(' ')
             .toLowerCase()
@@ -379,7 +384,7 @@ export const CodingAgentPage: React.FC = () => {
         setLoading(true);
         setInput('');
 
-        const eventSource = new EventSource(`http://localhost:3333/api/coding-agent/stream?prompt=${encodeURIComponent(input)}`);
+        const eventSource = new EventSource(`http://localhost:8000/api/coding-agent/stream?prompt=${encodeURIComponent(input)}`);
 
 eventSource.addEventListener('stream_event', (evt) => {
             try {
@@ -449,6 +454,8 @@ eventSource.addEventListener('stream_event', (evt) => {
                         }
                         return list;
                     });
+                } else if (e.type === 'scenario_match_event') {
+                    addMessage({ id: e.id, type: 'scenario_match', data: { matches: e.data.matches || [] }, timestamp: Date.now() });
                 }
             } catch (error) {
                 // ignore parse error
@@ -480,6 +487,8 @@ eventSource.addEventListener('stream_event', (evt) => {
     leftMessagesRaw.forEach((m, idx) => { if (m.type === 'tool') toolLastIndex.set(m.id, idx); });
     const leftMessages = leftMessagesRaw.filter((m, idx) => m.type !== 'tool' || toolLastIndex.get(m.id) === idx);
     const bddMsg = messages.find(m => m.type === 'bdd');
+    const scenarioMatchMsg = messages.find(m => m.type === 'scenario_match');
+    const serverMatches: Record<string, string[]> | undefined = scenarioMatchMsg ? (scenarioMatchMsg.data.matches || []).reduce((acc: Record<string, string[]>, cur: any) => { acc[cur.scenarioId] = cur.paths || []; return acc; }, {}) : undefined;
     const projectMsg = messages.find(m => m.type === 'project');
 
     return (
@@ -567,7 +576,7 @@ eventSource.addEventListener('stream_event', (evt) => {
                 {/* 中间：BDD 列表 + RAG 使用组件 */}
                 <Paper elevation={0} sx={{ p: 2, overflow: 'auto', bgcolor: '#ffffff', border: '1px solid #e5e7eb', display: codeMaximized ? 'none' : 'block' }}>
                     {bddMsg && Array.isArray(bddMsg.data.scenarios) && bddMsg.data.scenarios.length > 0 ? (
-                        <BDDCard scenarios={bddMsg.data.scenarios} project={projectMsg?.data.project} />
+                        <BDDCard scenarios={bddMsg.data.scenarios} project={projectMsg?.data.project} serverMatches={serverMatches} />
                     ) : (
                         <Typography variant="body2" color="text.secondary">等待 BDD 场景生成...</Typography>
                     )}
