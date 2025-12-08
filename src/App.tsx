@@ -1,7 +1,9 @@
 import React, { useCallback, useRef, useState } from 'react';
 import type { StreamEvent, Conversation, ConversationEvent, NormalEventData, ToolCallEventData, WaitingInputEventData } from './types';
-import { theme } from './theme';
+import { theme, darkTheme as dtheme } from './theme';
 import { ToolCard } from './components/ToolCard';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 const SSE_URL = (prompt: string, sessionId?: string | null, conversationId?: string | null, pauseMode?: boolean) => {
   let url = `http://localhost:8000/api/agent/stream?prompt=${encodeURIComponent(prompt)}&language=chinese`;
@@ -16,7 +18,7 @@ function Toolbar({
   loading,
   pauseMode,
   onPauseModeChange
-}: {
+}:{
   onSend: (text: string) => void;
   loading: boolean;
   pauseMode: boolean;
@@ -24,16 +26,16 @@ function Toolbar({
 }) {
   const [text, setText] = useState('比较 iPhone 15 和 Samsung Galaxy S24 的电池容量，并指出哪个更大。写一个 md 报告');
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: theme.space(2.5 as any) }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: dtheme.space(2.5 as any) }}>
       {/* 人机协作模式开关 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: theme.space(2) }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: dtheme.space(2) }}>
         <label style={{
           display: 'flex',
           alignItems: 'center',
-          gap: theme.space(1.5 as any),
+          gap: dtheme.space(1.5 as any),
           cursor: 'pointer',
           fontSize: 13,
-          color: theme.color.subtext,
+          color: dtheme.color.subtext,
           fontWeight: 500
         }}>
           <input
@@ -45,7 +47,7 @@ function Toolbar({
               cursor: loading ? 'not-allowed' : 'pointer',
               width: 16,
               height: 16,
-              accentColor: theme.color.primary
+              accentColor: dtheme.color.primary
             }}
           />
           <span>🤝 人机协作模式</span>
@@ -53,10 +55,10 @@ function Toolbar({
         {pauseMode && (
           <span style={{
             fontSize: 11,
-            color: theme.color.primary,
-            background: theme.color.primaryLight,
-            padding: `${theme.space(0.75 as any)} ${theme.space(2)}`,
-            borderRadius: theme.radius.full,
+            color: dtheme.color.primary,
+            background: dtheme.color.primaryLight,
+            padding: `${dtheme.space(0.75 as any)} ${dtheme.space(2)}`,
+            borderRadius: dtheme.radius.full,
             fontWeight: 600
           }}>
             已启用
@@ -65,7 +67,7 @@ function Toolbar({
       </div>
 
       {/* 输入框和发送按钮 */}
-      <div style={{ display: 'flex', gap: theme.space(2) }}>
+      <div style={{ display: 'flex', gap: dtheme.space(2) }}>
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -75,45 +77,45 @@ function Toolbar({
           }}
           style={{
             flex: 1,
-            padding: `${theme.space(3)} ${theme.space(4)}`,
-            border: `1px solid ${theme.color.border}`,
-            borderRadius: theme.radius.lg,
+            padding: `${dtheme.space(3)} ${dtheme.space(4)}`,
+            border: `1px solid ${dtheme.color.border}`,
+            borderRadius: dtheme.radius.lg,
             fontSize: 14,
             outline: 'none',
             boxShadow: 'none',
-            background: '#fff',
-            color: theme.color.text,
-            fontFamily: theme.font.base,
-            transition: `border-color ${theme.transition.fast}`
+            background: dtheme.color.card,
+            color: dtheme.color.text,
+            fontFamily: dtheme.font.base,
+            transition: `border-color ${dtheme.transition.fast}`
           }}
-          onFocus={(e) => e.currentTarget.style.borderColor = theme.color.primary}
-          onBlur={(e) => e.currentTarget.style.borderColor = theme.color.border}
+          onFocus={(e) => e.currentTarget.style.borderColor = dtheme.color.primary}
+          onBlur={(e) => e.currentTarget.style.borderColor = dtheme.color.border}
         />
         <button
           onClick={() => onSend(text)}
           disabled={loading || !text.trim()}
           style={{
-            padding: `${theme.space(3)} ${theme.space(5)}`,
-            borderRadius: theme.radius.lg,
+            padding: `${dtheme.space(3)} ${dtheme.space(5)}`,
+            borderRadius: dtheme.radius.lg,
             border: 'none',
-            background: loading ? theme.color.muted : theme.color.primary,
+            background: loading ? dtheme.color.muted : `linear-gradient(135deg, ${dtheme.color.primary} 0%, ${dtheme.color.primaryDark} 100%)`,
             color: 'white',
             cursor: loading ? 'not-allowed' : 'pointer',
             fontWeight: 600,
             fontSize: 14,
-            boxShadow: loading ? 'none' : theme.shadow.sm,
-            transition: `all ${theme.transition.fast}`
+            boxShadow: loading ? 'none' : dtheme.shadow.sm,
+            transition: `all ${dtheme.transition.fast}`
           }}
           onMouseEnter={(e) => {
             if (!loading && text.trim()) {
-              e.currentTarget.style.background = theme.color.primaryDark;
-              e.currentTarget.style.boxShadow = theme.shadow.md;
+              e.currentTarget.style.filter = 'brightness(1.05)';
+              e.currentTarget.style.boxShadow = dtheme.shadow.md;
             }
           }}
           onMouseLeave={(e) => {
             if (!loading && text.trim()) {
-              e.currentTarget.style.background = theme.color.primary;
-              e.currentTarget.style.boxShadow = theme.shadow.sm;
+              e.currentTarget.style.filter = 'brightness(1)';
+              e.currentTarget.style.boxShadow = dtheme.shadow.sm;
             }
           }}
         >
@@ -325,17 +327,26 @@ function GeneralAgentPage() {
       height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      fontFamily: theme.font.base,
-      background: theme.color.bg
+      fontFamily: dtheme.font.base,
+      background: dtheme.color.bg
     }}>
       <main style={{ flex: 1, overflow: 'hidden' }}>
         <div style={{ height: '100%', overflow: 'auto' }}>
-          <div style={{ maxWidth: 960, margin: '0 auto', padding: `${theme.space(6)} ${theme.space(4)}` }}>
+          <div style={{ maxWidth: 760, margin: '0 auto', padding: `${dtheme.space(6)} ${dtheme.space(4)}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: dtheme.space(2), marginBottom: dtheme.space(4) }}>
+              <div style={{ width: 40, height: 40, borderRadius: dtheme.radius.md, background: dtheme.color.card, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: dtheme.shadow.sm }}>
+                ✨
+              </div>
+              <div>
+                <div style={{ color: dtheme.color.text, fontWeight: 700, fontSize: 16 }}>AI Assistant</div>
+                <div style={{ color: dtheme.color.subtext, fontSize: 12 }}>Ready to help you code</div>
+              </div>
+            </div>
             {conversations.length === 0 && (
               <div style={{
                 textAlign: 'center',
-                color: theme.color.muted,
-                padding: theme.space(12),
+                color: dtheme.color.muted,
+                padding: dtheme.space(12),
                 fontSize: 14
               }}>
                 <div style={{ fontSize: 48, marginBottom: theme.space(3) }}>💬</div>
@@ -346,27 +357,15 @@ function GeneralAgentPage() {
             {/* 按 Conversation 渲染 */}
             {conversations.map((conversation) => (
               <div key={conversation.conversationId} style={{
-                marginBottom: theme.space(6),
-                padding: theme.space(4),
-                border: `1px solid ${theme.color.borderLight}`,
-                borderRadius: theme.radius.xl,
-                background: theme.color.card,
-                boxShadow: theme.shadow.sm
+                marginBottom: dtheme.space(6),
+                padding: dtheme.space(2),
+                borderRadius: dtheme.radius.xl
               }}>
                 {/* Conversation 标题 */}
-                <div style={{
-                  fontSize: 10,
-                  color: theme.color.muted,
-                  marginBottom: theme.space(3),
-                  fontFamily: theme.font.mono,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  📝 Conversation: {conversation.conversationId.slice(-8)}
-                </div>
+                <div style={{ fontSize: 10, color: dtheme.color.subtext, marginBottom: dtheme.space(2), fontFamily: dtheme.font.mono }}>📝 Conversation: {conversation.conversationId.slice(-8)}</div>
 
                 {/* 渲染所有事件 */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: theme.space(3) }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: dtheme.space(3) }}>
                   {conversation.events.map((event, eventIndex) => {
                     // 安全检查
                     if (!event || !event.type) {
@@ -376,6 +375,32 @@ function GeneralAgentPage() {
                     // Normal Event - 文本消息
                     if (event.type === 'normal_event') {
                       const isUser = event.role === 'user';
+                      const renderContent = (text: string) => {
+                        const parts: Array<{ kind: 'text'|'code'; lang?: string; content: string }> = [];
+                        try {
+                          const regex = /```(\w+)?\s*([\s\S]*?)```/g;
+                          let lastIndex = 0; let m: RegExpExecArray | null;
+                          while ((m = regex.exec(text))) {
+                            if (m.index > lastIndex) parts.push({ kind: 'text', content: text.slice(lastIndex, m.index) });
+                            parts.push({ kind: 'code', lang: (m[1]||'tsx'), content: m[2]||'' });
+                            lastIndex = regex.lastIndex;
+                          }
+                          if (lastIndex < text.length) parts.push({ kind: 'text', content: text.slice(lastIndex) });
+                        } catch { parts.push({ kind: 'text', content: text }); }
+                        return (
+                          <div>
+                            {parts.map((p, idx) => p.kind === 'text' ? (
+                              <span key={idx} style={{ whiteSpace: 'pre-wrap' }}>{p.content}</span>
+                            ) : (
+                              <div key={idx} style={{ marginTop: dtheme.space(2), borderRadius: dtheme.radius.md, overflow: 'hidden', border: `1px solid ${dtheme.color.border}` }}>
+                                <SyntaxHighlighter language={p.lang as any} style={vscDarkPlus} customStyle={{ margin: 0, fontSize: 13 }} showLineNumbers wrapLongLines>
+                                  {p.content}
+                                </SyntaxHighlighter>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      };
                       return (
                         <div key={event.id} style={{
                           display: 'flex',
@@ -383,19 +408,24 @@ function GeneralAgentPage() {
                         }}>
                           <div style={{
                             maxWidth: '80%',
-                            padding: `${theme.space(3)} ${theme.space(3.5 as any)}`,
-                            borderRadius: theme.radius.lg,
+                            padding: `${dtheme.space(3)} ${dtheme.space(3.5 as any)}`,
+                            borderRadius: dtheme.radius.lg,
                             background: isUser
-                              ? `linear-gradient(135deg, ${theme.color.primary} 0%, ${theme.color.primaryDark} 100%)`
-                              : theme.color.bgSecondary,
-                            color: isUser ? '#ffffff' : theme.color.text,
-                            border: isUser ? 'none' : `1px solid ${theme.color.borderLight}`,
-                            whiteSpace: 'pre-wrap',
+                              ? `linear-gradient(135deg, ${dtheme.color.primary} 0%, ${dtheme.color.primaryDark} 100%)`
+                              : dtheme.color.card,
+                            color: isUser ? '#ffffff' : dtheme.color.text,
+                            border: isUser ? 'none' : `1px solid ${dtheme.color.border}`,
                             lineHeight: 1.7,
                             fontSize: 14,
-                            boxShadow: isUser ? theme.shadow.sm : 'none'
+                            boxShadow: isUser ? dtheme.shadow.sm : 'none'
                           }}>
-                            {event.content}
+                            {!isUser ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: dtheme.space(1), color: dtheme.color.subtext, fontSize: 12, marginBottom: dtheme.space(1) }}>
+                                <span>✨</span>
+                                <span>AI Assistant</span>
+                              </div>
+                            ) : null}
+                            {renderContent(event.content)}
                             {event.stream && !event.done && (
                               <span style={{
                                 opacity: 0.6,
@@ -413,32 +443,32 @@ function GeneralAgentPage() {
                       const steps = event.data?.step || [];
                       return (
                         <div key={event.id} style={{
-                          border: `1px solid ${theme.color.borderLight}`,
-                          borderRadius: theme.radius.lg,
-                          background: theme.color.card,
+                          border: `1px solid ${dtheme.color.border}`,
+                          borderRadius: dtheme.radius.lg,
+                          background: dtheme.color.card,
                           overflow: 'hidden',
-                          boxShadow: theme.shadow.xs
+                          boxShadow: dtheme.shadow.xs
                         }}>
                           <div style={{
-                            padding: `${theme.space(2.5 as any)} ${theme.space(3)}`,
-                            borderBottom: `1px solid ${theme.color.borderLight}`,
+                            padding: `${dtheme.space(2.5 as any)} ${dtheme.space(3)}`,
+                            borderBottom: `1px solid ${dtheme.color.border}`,
                             fontWeight: 600,
-                            color: theme.color.text,
-                            background: theme.color.primaryLight,
+                            color: dtheme.color.text,
+                            background: dtheme.color.bgSecondary,
                             fontSize: 13,
                             display: 'flex',
                             alignItems: 'center',
-                            gap: theme.space(1.5 as any)
+                            gap: dtheme.space(1.5 as any)
                           }}>
                             <span>📋</span>
                             <span>任务规划</span>
                           </div>
-                          <div style={{ padding: theme.space(2.5 as any) }}>
+                          <div style={{ padding: dtheme.space(2.5 as any) }}>
                             {steps.map((step) => {
                               const statusMap = {
-                                pending: { bg: theme.color.bgSecondary, color: theme.color.muted, text: '待执行', icon: '⏳' },
-                                doing: { bg: theme.color.infoLight, color: theme.color.info, text: '进行中', icon: '🔄' },
-                                done: { bg: theme.color.successLight, color: theme.color.success, text: '已完成', icon: '✅' }
+                                pending: { bg: dtheme.color.bgSecondary, color: dtheme.color.muted, text: '待执行', icon: '⏳' },
+                                doing: { bg: dtheme.color.infoLight, color: dtheme.color.info, text: '进行中', icon: '🔄' },
+                                done: { bg: dtheme.color.successLight, color: dtheme.color.success, text: '已完成', icon: '✅' }
                               };
                               const s = statusMap[step.status] || statusMap.pending;
 
@@ -447,23 +477,23 @@ function GeneralAgentPage() {
                                   display: 'flex',
                                   justifyContent: 'space-between',
                                   alignItems: 'center',
-                                  padding: `${theme.space(2.5 as any)} ${theme.space(3)}`,
-                                  marginBottom: theme.space(1.5 as any),
-                                  borderRadius: theme.radius.md,
+                                  padding: `${dtheme.space(2.5 as any)} ${dtheme.space(3)}`,
+                                  marginBottom: dtheme.space(1.5 as any),
+                                  borderRadius: dtheme.radius.md,
                                   background: s.bg,
-                                  border: `1px solid ${theme.color.borderLight}`,
-                                  transition: `all ${theme.transition.base}`
+                                  border: `1px solid ${dtheme.color.border}`,
+                                  transition: `all ${dtheme.transition.base}`
                                 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: theme.space(2) }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: dtheme.space(2) }}>
                                     <span style={{ fontSize: 14 }}>{s.icon}</span>
-                                    <span style={{ color: theme.color.text, fontSize: 13 }}>{step.title}</span>
+                                    <span style={{ color: dtheme.color.text, fontSize: 13 }}>{step.title}</span>
                                   </div>
                                   <span style={{
                                     fontSize: 11,
                                     color: s.color,
                                     fontWeight: 600,
-                                    padding: `${theme.space(0.5 as any)} ${theme.space(1.5 as any)}`,
-                                    borderRadius: theme.radius.full,
+                                    padding: `${dtheme.space(0.5 as any)} ${dtheme.space(1.5 as any)}`,
+                                    borderRadius: dtheme.radius.full,
                                     background: 'rgba(255, 255, 255, 0.5)'
                                   }}>
                                     {s.text}
@@ -504,27 +534,27 @@ function GeneralAgentPage() {
                     if (event.type === 'waiting_input_event') {
                       return (
                         <div key={event.id} style={{
-                          border: `2px solid ${theme.color.primary}`,
-                          borderRadius: theme.radius.lg,
-                          padding: theme.space(4),
-                          background: theme.color.primaryLight,
-                          boxShadow: theme.shadow.md
+                          border: `1px solid ${dtheme.color.border}`,
+                          borderRadius: dtheme.radius.lg,
+                          padding: dtheme.space(4),
+                          background: dtheme.color.card,
+                          boxShadow: dtheme.shadow.md
                         }}>
                           <div style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: theme.space(2.5 as any),
-                            marginBottom: theme.space(2)
+                            gap: dtheme.space(2.5 as any),
+                            marginBottom: dtheme.space(2)
                           }}>
                             <span style={{ fontSize: 24 }}>⏸️</span>
-                            <div style={{ fontSize: 15, fontWeight: 600, color: theme.color.primary }}>
+                            <div style={{ fontSize: 15, fontWeight: 600, color: dtheme.color.primary }}>
                               等待您的输入
                             </div>
                           </div>
                           <div style={{
                             fontSize: 14,
-                            color: theme.color.text,
-                            marginBottom: theme.space(1.5 as any),
+                            color: dtheme.color.text,
+                            marginBottom: dtheme.space(1.5 as any),
                             lineHeight: 1.6
                           }}>
                             {event.data.message}
@@ -532,14 +562,14 @@ function GeneralAgentPage() {
                           {event.data.reason && (
                             <div style={{
                               fontSize: 12,
-                              color: theme.color.subtext,
-                              padding: theme.space(2),
+                              color: dtheme.color.subtext,
+                              padding: dtheme.space(2),
                               background: 'rgba(255, 255, 255, 0.7)',
-                              borderRadius: theme.radius.md,
-                              marginTop: theme.space(2),
+                              borderRadius: dtheme.radius.md,
+                              marginTop: dtheme.space(2),
                               display: 'flex',
                               alignItems: 'flex-start',
-                              gap: theme.space(1.5 as any)
+                              gap: dtheme.space(1.5 as any)
                             }}>
                               <span>💡</span>
                               <span>{event.data.reason}</span>
@@ -559,12 +589,12 @@ function GeneralAgentPage() {
       </main>
 
       <footer style={{
-        padding: `${theme.space(4)} ${theme.space(6)}`,
-        borderTop: `1px solid ${theme.color.borderLight}`,
-        background: theme.color.card,
+        padding: `${dtheme.space(4)} ${dtheme.space(6)}`,
+        borderTop: `1px solid ${dtheme.color.border}`,
+        background: dtheme.color.bgSecondary,
         boxShadow: `0 -2px 8px rgba(26, 31, 54, 0.04)`
       }}>
-        <div style={{ maxWidth: 960, margin: '0 auto' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
           <Toolbar
             onSend={handleSend}
             loading={loading}
